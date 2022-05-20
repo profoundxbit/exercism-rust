@@ -11,14 +11,26 @@ pub enum LogLevel {
 }
 /// primary function for emitting logs
 pub fn log(level: LogLevel, message: &str) -> String {
-    unimplemented!()
+    match level {
+        LogLevel::Info => info(message),
+        LogLevel::Warning => warn(message),
+        LogLevel::Error => error(message)
+    }
 }
 pub fn info(message: &str) -> String {
-    unimplemented!()
+    let mut info_msg = "[INFO]: ".to_owned();
+    info_msg += message;
+    // let mut message = message.to_string();
+    // message.insert_str(0, "[INFO]: ");
+    info_msg
 }
 pub fn warn(message: &str) -> String {
-    unimplemented!()
+    let mut message = message.to_string();
+    message.insert_str(0, "[WARNING]: ");
+    message
 }
 pub fn error(message: &str) -> String {
-    unimplemented!()
+    let mut message = message.to_string();
+    message.insert_str(0, "[ERROR]: ");
+    message
 }
