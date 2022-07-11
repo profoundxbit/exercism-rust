@@ -20,28 +20,24 @@ enum Category {
     FiveOfAKind,
 }
 
-fn is_straight_flush(cards: &Vec<Card>) -> bool {
-    cards
-        .windows(2)
-        .all(|pair| { 
-            if pair.get(0).unwrap().rank + 1 == pair.get(1).unwrap().rank {
-                true
-            } else {
-                false
-            }
-        })
+fn is_straight_flush(cards: &[Card]) -> bool {
+    cards.windows(2).all(is_sequential)
+}
+
+fn is_sequential(cards: &[Card]) -> bool {
+    let c1_rank = cards.first().unwrap().rank as u8;
+    let c2_rank = cards.last().unwrap().rank as u8;
+    c1_rank + 1 == c2_rank
 }
 
 fn is_five_of_a_kind(cards: &Vec<Card>) -> bool {
     true
 }
 
-fn categorize_hand(cards: &mut Vec<Card>) -> Category {
+fn categorize_hand(cards: &mut [Card]) -> Category {
     cards.sort_unstable_by_key(|card| card.rank);
-    if is_straight_flush(&cards) {
+    if is_straight_flush(cards) {
         Category::StraghtFlush
-    } else if is_five_of_a_kind(&cards) {
-        Category::FiveOfAKind
     } else {
         Category::HighCard
     }
@@ -59,7 +55,7 @@ impl<'a> From<&&'a str> for Hand {
     fn from(str_hand: &&'a str) -> Self {
         let cards = str_hand
             .split_whitespace()
-            .map(|str_card| -> Card { Card::from(str_card) })
+            .map(Card::from)
             .collect::<Vec<Card>>();
 
         Self::new(cards)
