@@ -1,7 +1,27 @@
-#[derive(Debug, PartialEq, PartialOrd)]
+use std::cmp::Ordering;
+
+#[derive(Debug, Eq)]
 pub struct Card {
     pub suit: Suit,
     pub rank: Rank,
+}
+
+impl Ord for Card {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.rank.cmp(&other.rank)
+    }
+}
+
+impl PartialOrd for Card {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Card {
+    fn eq(&self, other: &Self) -> bool {
+        self.rank == other.rank
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
@@ -42,7 +62,7 @@ impl From<&str> for Rank {
     }
 }
 
-#[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum Suit {
     Heart,
     Diamond,

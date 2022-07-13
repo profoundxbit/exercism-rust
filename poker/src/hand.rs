@@ -3,8 +3,9 @@ use std::{cmp::Ordering, collections::HashMap};
 use crate::card::Card;
 
 #[derive(Debug)]
-pub struct Hand {
+pub struct Hand<'a> {
     cards: Vec<Card>,
+    raw: &'a str,
     category: Category,
 }
 
@@ -20,6 +21,37 @@ enum Category {
     FourOfAKind,
     StraghtFlush,
     FiveOfAKind,
+}
+
+impl Category {
+    fn cmp_straight_flush(hand_cards : &[Card], other_hand_cards: &[Card]) -> Ordering {
+        hand_cards[4].rank.cmp(&other_hand_cards[4].rank)
+    }
+
+    fn cmp_four_of_a_kind(hand_cards : &[Card], other_hand_cards: &[Card]) -> Ordering {
+        let mut hand_cards_map = HashMap::new();
+        let mut other_hand_cards_map = HashMap::new();
+        for card in hand_cards {
+            hand_cards_map.entry(card.rank)
+                .and_modify(|rank| *rank += 1)
+                .or_insert(1);
+        }
+        for card in other_hand_cards {
+            other_hand_cards_map.entry(card.rank)
+                .and_modify(|rank| *rank += 1)
+                .or_insert(1);
+        }
+
+        let quad_rank_from_hand = hand_cards_map.iter().find(|(_key, &val)| val == 4);
+        let quad_rank_from_other_hand = other_hand_cards_map.iter().find(|(_key, &val)| val == 4);
+        let single_rank_from_hand = hand_cards_map.iter().find(|(_key, &val)| val == 1);
+        let single_rank_from_other_hand = other_hand_cards_map.iter().find(|(_key, &val)| val == 1);
+
+        match quad_rank_from_hand.cmp(&quad_rank_from_other_hand) {
+            Ordering::Equal => single_rank_from_hand.cmp(&single_rank_from_other_hand),
+            ordering => ordering
+        }
+    }
 }
 
 fn is_straight_flush(cards: &[Card]) -> bool {
@@ -111,37 +143,59 @@ fn categorize_hand(cards: &mut [Card]) -> Category {
     }
 }
 
-impl Hand {
-    fn new(cards: Vec<Card>) -> Self {
+impl<'a> Hand<'a> {
+    fn new(cards: Vec<Card>, raw: &'a str) -> Self {
         let mut cards = cards;
         let category = categorize_hand(&mut cards);
-        Hand { cards, category }
+        Hand { cards, category, raw }
+    }
+
+    pub fn into_inner(self) -> &'a str {
+        self.raw
     }
 }
 
-impl PartialOrd for Hand {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let cmp_result = self.category.cmp(&other.category);
-        match cmp_result {
-            Ordering::Equal => panic!("Equal categories"),
-            _ => Some(cmp_result),
+impl<'a> PartialEq for Hand<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.category == other.category && 
+        self.cards == other.cards
+    }
+}
+
+impl<'a> Eq for Hand<'a> {}
+
+impl<'a> Ord for Hand<'a> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.category.cmp(&other.category) {
+            Ordering::Equal => same_category_cmp(self, other),
+            result => result
         }
     }
 }
 
-impl PartialEq for Hand {
-    fn eq(&self, other: &Self) -> bool {
-        self.category == other.category
+fn same_category_cmp(hand: &Hand, other_hand: &Hand) -> Ordering {
+    match &hand.category {
+        Category::StraghtFlush => Category::cmp_straight_flush(&hand.cards, &other_hand.cards),
+        Category::FourOfAKind => Category::cmp_four_of_a_kind(&hand.cards, &other_hand.cards),
+        _ => panic!("Every hand should belong to a category!")
     }
 }
 
-impl<'a> From<&&'a str> for Hand {
+impl<'a> PartialOrd for Hand<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<'a> From<&&'a str> for Hand<'a> {
     fn from(str_hand: &&'a str) -> Self {
-        let cards = str_hand
+        let mut cards = str_hand
             .split_whitespace()
             .map(Card::from)
             .collect::<Vec<Card>>();
 
-        Self::new(cards)
+        cards.sort_unstable_by_key(|card| card.rank);
+
+        Self::new(cards, *str_hand)
     }
 }
