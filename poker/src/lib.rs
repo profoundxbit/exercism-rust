@@ -1,3 +1,5 @@
+use std::mem;
+
 use crate::hand::Hand;
 
 mod card;
@@ -10,15 +12,13 @@ mod hand;
 pub fn winning_hands<'a>(hands: &[&'a str]) -> Vec<&'a str> {
     let mut parsed_hands: Vec<Hand> = hands.iter().map(Hand::from).collect();
     parsed_hands.sort_by(|x, y| x.partial_cmp(y).unwrap());
-    /*  print!("Hands: {:?}", parsed_hands.
-    into_iter()
-    .map(|hand| hand.into_inner())
-    .collect::<Vec<_>>()); */
 
-    let mut winning_hands = Vec::new();
-    let raw_hand = parsed_hands.remove(parsed_hands.len()-1);
-    winning_hands.push(raw_hand.into_inner());
 
+    // let raw_hand = parsed_hands.remove(parsed_hands.len()-1);
+    let w_hand = parsed_hands.remove(parsed_hands.len()-1);
+    let mut winning_hands: Vec<_> = parsed_hands.into_iter().filter(|x| x.eq(&w_hand)).map(|c| c.into_inner()).collect();
+    winning_hands.push(w_hand.into_inner());
     winning_hands
+    
     // unimplemented!("Out of {:?}, which hand wins?", hands);
 }

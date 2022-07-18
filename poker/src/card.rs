@@ -26,19 +26,19 @@ impl PartialEq for Card {
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
 pub enum Rank {
-    Two,
-    Three,
-    Four,
-    Five,
-    Six,
-    Seven,
-    Eight,
-    Nine,
-    Ten,
-    Jack,
-    Queen,
-    King,
-    Ace
+    Two = 2,
+    Three = 3,
+    Four = 4,
+    Five = 5,
+    Six = 6,
+    Seven = 7,
+    Eight = 8,
+    Nine = 9,
+    Ten = 10,
+    Jack = 11,
+    Queen = 12,
+    King = 13,
+    Ace = 14
 }
 
 impl From<&str> for Rank {
@@ -78,12 +78,10 @@ impl Card {
 
 impl<'a> From<&'a str> for Card {
     fn from(str_card: &'a str) -> Self {
-        println!("Attempting to parse {:?} into Card", &str_card);
         //Find index of suit
         //str before index of suit is rank
 
         let str_rank: &str = &str_card[.. str_card.len()-1];
-        println!("{:?}", &str_rank);
 
         let suit = match str_card.chars().last().unwrap() {
             'H' => Suit::Heart,
