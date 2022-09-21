@@ -46,7 +46,7 @@ impl Hours {
         let hours = hours.rem(24);
         match hours.is_negative() {
             true => Self(24 - hours.abs()),
-            false => Self(hours)
+            false => Self(hours),
         }
     }
 }
@@ -77,14 +77,36 @@ impl From<i32> for Minutes {
 
 impl Clock {
     pub fn new(hours: i32, minutes: i32) -> Self {
-        let hours = (minutes / 60) + hours;
-        Clock {
-            hours: hours.into(),
-            minutes: minutes.into(),
+        let mut hours = hours;
+        match minutes.is_negative() {
+            true => {
+                // First find out how many hours to go back
+                hours += minutes / 60;
+                if minutes.rem(60).abs() > 0 {
+                    hours -= 1; // Negative minutes means atleast 1 hour back
+                }
+
+                // Then calculate minutes left after subtracting hours back
+                let minutes = 60 + minutes.rem(60);
+                Clock {
+                    hours: hours.into(),
+                    minutes: minutes.into(),
+                }
+            }
+            false => {
+                hours += minutes / 60;
+                Clock {
+                    hours: hours.into(),
+                    minutes: minutes.into(),
+                }
+            }
         }
     }
 
     pub fn add_minutes(&self, minutes: i32) -> Self {
-        unimplemented!("Add {} minutes to existing Clock time", minutes);
+        let Minutes(mut m) = self.minutes;
+        m += minutes;
+        let Hours(hours) = self.hours;
+        Clock::new(hours, m)
     }
 }
