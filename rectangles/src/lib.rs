@@ -8,13 +8,6 @@ pub fn count(lines: &[&str]) -> u32 {
         let index = line.0;
         let line = line.1;
         if valid_line(line) {
-            println!("Line '{}' is valid input.", &line);
-            // For line find index of first corner, grab chars until next corner found inclusive
-            // Iterate through lines. If next line contains valid characters at corner indexes proceed.
-            // If next line contains corner char at corner indexes, record as rectangle found.
-            // If next line is not valid at corner indexes exit.
-            // Repeat for end of prev line corner til next corner.
-            //Skip lines with no corner char
             let corner_pairs = line.match_indices(CORNER_CHAR).combinations(2);
             for corner_pair in corner_pairs {
                 dbg!(&corner_pair);
@@ -25,16 +18,15 @@ pub fn count(lines: &[&str]) -> u32 {
                     let index_two = corner_pair[1].0;
                     let rect_side_two = l[index_two];
                     let in_between_chars = &l[index..=index_two];
-                    //dbg!(&in_between_chars);
                     if not_side(rect_side_one) || not_side(rect_side_two) {
                         break;
                     }
-
-                    if rect_side_one == CORNER_CHAR && rect_side_two == CORNER_CHAR {
-                        if !in_between_chars.contains(&' ') {
-                            println!("Rectangle found!");
-                            rectangles_count += 1;
-                        }
+                    if rect_side_one == CORNER_CHAR
+                        && rect_side_two == CORNER_CHAR
+                        && !in_between_chars.contains(&' ')
+                    {
+                        println!("Rectangle found!");
+                        rectangles_count += 1;
                     }
                 }
             }
