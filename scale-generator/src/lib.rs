@@ -19,27 +19,6 @@ use std::vec;
 use failure::Error;
 
 type Result<T> = std::result::Result<T, Error>;
-type Sharps = 
-
-enum NoteType {
-    Sharp {
-        major: [&str; 6],
-        minor: [&str; 6]
-    },
-    Flats {
-        major: [&str; 6],
-        minor:  [&str; 6]
-    }
-}
-
-
-
-fn use_sharps(tonic :&str) -> bool {
-    let sharps = NoteType::Sharp { major: ["G", "D", "A", "E", "B", "F#"], minor: ["e", "b", "f#", "c#", "g#", "d#"] };
-    if tonic.chars().nth(0).unwrap().is_uppercase() {
-        
-    }
-}
 
 const CHROMATIC_SCALE: [&str; 12] = [
     "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#",
@@ -85,8 +64,6 @@ pub struct Scale {
 
 impl Scale {
     pub fn new(tonic: &str, intervals: &str) -> Result<Scale> {
-        
-        match
         
         Ok(Self {
             notes: Default::default(),
