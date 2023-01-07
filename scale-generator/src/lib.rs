@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 
 // You should change this.
 //
@@ -13,12 +12,12 @@
 // which does more or less the same thing but automatically.
 
 mod failure;
-
-use std::vec;
+mod note;
 
 use failure::Error;
+use note::{into_flat, into_sharp, Note, NoteCategory, NoteType};
 
-type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 const CHROMATIC_SCALE: [&str; 12] = [
     "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#",
@@ -64,10 +63,74 @@ pub struct Scale {
 
 impl Scale {
     pub fn new(tonic: &str, intervals: &str) -> Result<Scale> {
-        
-        Ok(Self {
-            notes: Default::default(),
-        })
+        // Produce chromatic scale based on tonic and interval
+        // Modify scale based on tonic category
+
+        let tonic = Note::new(tonic);
+        let index = CHROMATIC_SCALE
+            .iter()
+            .position(|&n| {
+                if tonic.note_type == NoteType::Flat {
+                    let tonic_note = into_sharp(&tonic.inner).unwrap();
+                    return n.eq(&tonic_note);
+                }
+
+                n.eq(&tonic.inner.to_uppercase())
+            })
+            .ok_or(Error::new("Unable to locate tonic"))?;
+        let mut note_cycle = CHROMATIC_SCALE.iter().map(|&n| Note::new(n)).cycle();
+
+        let tonic_note = note_cycle
+            .nth(index)
+            .ok_or(Error::new("Unable to retrieve tonic note"))?;
+
+        let mut notes = vec![tonic_note];
+
+        for interval in intervals.chars() {
+            match interval {
+                'm' => {
+                    let note = note_cycle
+                        .next()
+                        .ok_or(Error::new("Unable to retrieve next note"))?;
+                    notes.push(note);
+                }
+                'M' => {
+                    let note = note_cycle
+                        .nth(1)
+                        .ok_or(Error::new("Unable to retrieve next note"))?;
+                    notes.push(note);
+                }
+                'A' => {
+                    let note = note_cycle
+                        .nth(2)
+                        .ok_or(Error::new("Unable to retrieve next note"))?;
+                    notes.push(note);
+                }
+                _ => return Err(Error::new(&format!("Invalid interval: {}", &interval))),
+            }
+        }
+        let notes = match tonic.category {
+            NoteCategory::None => notes
+                .iter()
+                .map(|x| x.inner.to_uppercase())
+                .collect::<Vec<_>>(),
+            NoteCategory::Sharps => notes
+                .into_iter()
+                .map(|x| match x.note_type.eq(&NoteType::Flat) {
+                    true => into_sharp(&x.inner).unwrap(),
+                    false => x.inner.to_owned(),
+                })
+                .collect::<Vec<_>>(),
+            NoteCategory::Flats => notes
+                .into_iter()
+                .map(|x| match x.note_type.eq(&NoteType::Sharp) {
+                    true => into_flat(&x.inner).unwrap(),
+                    false => x.inner.to_owned(),
+                })
+                .collect::<Vec<_>>(),
+        };
+
+        Ok(Self { notes })
     }
 
     pub fn chromatic(tonic: &str) -> Result<Scale> {
@@ -90,7 +153,6 @@ impl Scale {
         if FLATS.contains(&tonic) {
             for note in notes.iter_mut() {
                 if note.contains('#') {
-                    dbg!(&note);
                     *note = sharp_to_flat(note)?.to_string();
                 }
             }

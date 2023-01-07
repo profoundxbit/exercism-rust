@@ -2,13 +2,13 @@ use std::fmt::Display;
 
 #[derive(Debug)]
 pub struct Error {
-    details: String
+    details: String,
 }
 
 impl Error {
     pub fn new(msg: &str) -> Self {
         Self {
-            details: msg.to_string()
+            details: msg.to_string(),
         }
     }
 }
@@ -23,5 +23,4 @@ impl std::error::Error for Error {
     fn description(&self) -> &str {
         &self.details
     }
-
 }
