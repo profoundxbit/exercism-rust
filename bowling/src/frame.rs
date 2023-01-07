@@ -1,7 +1,7 @@
 use crate::Error;
 
-#[derive(Debug)]
-enum Roll {
+#[derive(Debug, PartialEq, Eq)]
+pub enum Roll {
     Pins(u16),
     Spare,
     Strike,
@@ -15,7 +15,7 @@ pub enum FrameState {
 
 #[derive(Debug)]
 pub struct Frame {
-    rolls: Vec<Roll>,
+    pub rolls: Vec<Roll>,
     pub state: FrameState,
 }
 
