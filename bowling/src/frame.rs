@@ -7,6 +7,15 @@ pub enum Roll {
     Strike,
 }
 
+impl From<Roll> for u16 {
+    fn from(roll: Roll) -> Self {
+        match roll {
+            Roll::Pins(pins) => pins,
+            _ => 10
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum FrameState {
     Open,

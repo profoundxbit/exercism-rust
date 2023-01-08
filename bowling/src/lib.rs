@@ -48,8 +48,8 @@ impl BowlingGame {
                     frame.rolls.push(Roll::Strike);
                 } else {
                     frame.rolls.push(Roll::Pins(pins));
-                    frame.state = FrameState::Closed;
                 }
+                frame.state = FrameState::Closed;
             } //Rolled twice so its either last roll was spare or strike. Push pins or strike
             _ => return Err(Error::GameComplete),
         };
@@ -76,6 +76,47 @@ impl BowlingGame {
     }
 
     pub fn score(&self) -> Option<u16> {
-        Some(0)
+        if self
+            .scoreboard
+            .iter()
+            .any(|frame| frame.state == FrameState::Open)
+        {
+            return None;
+        }
+
+        let score = self
+            .scoreboard
+            .iter()
+            .enumerate()
+            .fold(0u16, |mut total, (index, frame)| {
+                match frame.rolls[..] {
+                    [Roll::Strike] => {
+                        total += 10;
+                        let next_frame = &self.scoreboard[index + 1];
+                        let next_frame_first_roll = &next_frame.rolls[0];
+                        if *next_frame_first_roll == Roll::Strike {
+                            total += 10;
+                            match &self.scoreboard[index + 2].rolls[0] {
+                                Roll::Strike => total += 10,
+                                Roll::Pins(pins) => total += pins,
+                                _ => panic!("First roll of a frame cannot be a spare."),
+                            }
+                        } else {
+                            match next_frame.rolls[..] {
+                                [_, Roll::Spare] => total += 10,
+                                [Roll::Pins(first_roll_pins), Roll::Pins(second_roll_pins)] => total += first_roll_pins + second_roll_pins,
+                                _ => panic!("Normal frame can only be either a set of pins, spare, or strike.")
+                            }
+                        }                       
+                    }
+                    [Roll::Pins(first_roll_pins), Roll::Pins(second_roll_pins)] => {
+                        total += first_roll_pins + second_roll_pins
+                    }
+                    [_, Roll::Spare] => {},
+                    _ => (),
+                };
+                total
+            });
+        Some(0u16)
     }
 }
