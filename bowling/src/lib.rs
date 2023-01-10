@@ -28,36 +28,51 @@ impl BowlingGame {
                 } else {
                     frame.rolls.push(Roll::Pins(pins));
                 }
-            } // Empty frame so either push strike or pins
+            }
             1 => {
                 if let Some(Roll::Pins(x)) = frame.rolls.get(0) {
                     if x + pins == 10 {
                         frame.rolls.push(Roll::Spare);
                     } else {
-                        if pins == 10 {
-                            frame.rolls.push(Roll::Strike);
-                        } else {
-                            frame.rolls.push(Roll::Pins(pins));
-                            frame.state = FrameState::Closed;
-                        }
+                        frame.rolls.push(Roll::Pins(pins));
+                        frame.state = FrameState::Closed;
+                    }
+                } else {
+                    if pins == 10 {
+                        frame.rolls.push(Roll::Strike);
+                    } else {
+                        frame.rolls.push(Roll::Pins(pins));
                     }
                 }
-            } // Rolled once so either push spare or pins or strike.
+            }
             2 => {
-                if pins == 10 {
-                    frame.rolls.push(Roll::Strike);
-                } else {
-                    frame.rolls.push(Roll::Pins(pins));
+                match frame.rolls.get(1) {
+                    Some(Roll::Pins(second_throw_pins)) => {
+                        if second_throw_pins + pins > 10 {
+                            return Err(Error::NotEnoughPinsLeft);
+                        }
+                        frame.rolls.push(Roll::Pins(pins));
+                    }
+                    Some(Roll::Spare) | Some(Roll::Strike) => {
+                        if pins == 10 {
+                            frame.rolls.push(Roll::Strike)
+                        } else {
+                            frame.rolls.push(Roll::Pins(pins))
+                        }
+                    }
+                    _ => panic!("Invalid second roll of last frame"),
                 }
                 frame.state = FrameState::Closed;
-            } //Rolled twice so its either last roll was spare or strike. Push pins or strike
+            } 
             _ => return Err(Error::GameComplete),
         };
-
         Ok(())
     }
 
     pub fn roll(&mut self, pins: u16) -> Result<(), Error> {
+        if pins > 10 {
+            return Err(Error::NotEnoughPinsLeft);
+        }
         let (current_frame_index, mut current_frame) = self
             .scoreboard
             .iter_mut()
@@ -71,7 +86,6 @@ impl BowlingGame {
             let _ = current_frame.add_roll(pins)?;
         }
 
-        dbg!(self);
         Ok(())
     }
 
@@ -89,6 +103,16 @@ impl BowlingGame {
             .iter()
             .enumerate()
             .fold(0u16, |mut total, (index, frame)| {
+                if index == 9 {
+                    match frame.rolls[..] {
+                        [Roll::Strike, Roll::Strike, Roll::Strike] => total += 30,
+                        [Roll::Strike, _, Roll::Spare] | [_, Roll::Spare, Roll::Strike] => total +=20,
+                        [Roll::Strike, Roll::Pins(x), Roll::Pins(y)] => total += 10 + x + y,
+                        [_, Roll::Spare, Roll::Pins(pins)] => total += 10 + pins,
+                        [Roll::Pins(first_throw_pins), Roll::Pins(second_row_pins)] => total += first_throw_pins + second_row_pins,
+                        _ => panic!("Invalid final frame {:?}", frame)
+                    };
+                } else {
                 match frame.rolls[..] {
                     [Roll::Strike] => {
                         total += 10;
@@ -96,27 +120,45 @@ impl BowlingGame {
                         let next_frame_first_roll = &next_frame.rolls[0];
                         if *next_frame_first_roll == Roll::Strike {
                             total += 10;
+                            if index == &self.scoreboard.len() - 2 {
+                                match next_frame.rolls[..] {
+                                    [_, Roll::Strike, _] => total += 10,
+                                    [_, Roll::Pins(second_roll_pins), _] => total += second_roll_pins,
+                                    _ => panic!("Invalid last frame")
+                                }
+                            } else {
                             match &self.scoreboard[index + 2].rolls[0] {
                                 Roll::Strike => total += 10,
                                 Roll::Pins(pins) => total += pins,
                                 _ => panic!("First roll of a frame cannot be a spare."),
                             }
+                        }
                         } else {
                             match next_frame.rolls[..] {
                                 [_, Roll::Spare] => total += 10,
                                 [Roll::Pins(first_roll_pins), Roll::Pins(second_roll_pins)] => total += first_roll_pins + second_roll_pins,
                                 _ => panic!("Normal frame can only be either a set of pins, spare, or strike.")
                             }
-                        }                       
+                        }
                     }
                     [Roll::Pins(first_roll_pins), Roll::Pins(second_roll_pins)] => {
-                        total += first_roll_pins + second_roll_pins
-                    }
-                    [_, Roll::Spare] => {},
-                    _ => (),
+                        total += first_roll_pins + second_roll_pins;
+                    },
+                    [_, Roll::Spare] => {
+                        total += 10;
+                        let next_frame = &self.scoreboard[index+1];
+                        let next_frame_first_roll = &next_frame.rolls[0];
+                        match *next_frame_first_roll {
+                                Roll::Strike => total += 10,
+                                Roll::Pins(pins) => total += pins,
+                                _ => panic!("First roll of a frame cannot be a spare."),
+                        };
+                    },
+                    _ => panic!("Invalid frame {:?}", &frame),
                 };
+            }
                 total
             });
-        Some(0u16)
+        Some(score)
     }
 }

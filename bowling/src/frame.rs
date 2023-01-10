@@ -11,7 +11,7 @@ impl From<Roll> for u16 {
     fn from(roll: Roll) -> Self {
         match roll {
             Roll::Pins(pins) => pins,
-            _ => 10
+            _ => 10,
         }
     }
 }
@@ -38,10 +38,6 @@ impl Default for Frame {
 }
 
 impl Frame {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
     pub fn add_roll(&mut self, pins: u16) -> Result<(), Error> {
         if let Some(Roll::Pins(first_roll_pins)) = self.rolls.get(0) {
             match first_roll_pins + pins {
