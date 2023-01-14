@@ -8,10 +8,10 @@ use std::collections::BTreeMap;
 // of this exercise.
 #[allow(clippy::new_without_default)]
 pub struct School<'a> {
-    roster: BTreeMap<u32,Vec<&'a str>>,
+    roster: BTreeMap<u32, Vec<&'a str>>,
 }
 
-impl <'a> School<'a> {
+impl<'a> School<'a> {
     pub fn new() -> School<'a> {
         School {
             roster: Default::default(),
