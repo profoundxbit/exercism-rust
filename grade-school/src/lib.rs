@@ -7,22 +7,22 @@ use std::collections::BTreeMap;
 // case, we want to keep things relatively simple. The `Default` trait is not the point
 // of this exercise.
 #[allow(clippy::new_without_default)]
-pub struct School {
-    roster: BTreeMap<u32, Vec<String>>,
+pub struct School<'a> {
+    roster: BTreeMap<u32,Vec<&'a str>>,
 }
 
-impl School {
-    pub fn new() -> School {
+impl <'a> School<'a> {
+    pub fn new() -> School<'a> {
         School {
             roster: Default::default(),
         }
     }
 
-    pub fn add(&mut self, grade: u32, student: &str) {
+    pub fn add(&mut self, grade: u32, student: &'a str) {
         self.roster
             .entry(grade)
-            .and_modify(|g| g.push(student.to_owned()))
-            .or_insert_with(|| vec![student.to_owned()]);
+            .and_modify(|g| g.push(student))
+            .or_insert_with(|| vec![student]);
     }
 
     pub fn grades(&self) -> Vec<u32> {
@@ -39,6 +39,6 @@ impl School {
             None => Default::default(),
         };
         students.sort();
-        students
+        students.iter().map(|x| x.to_string()).collect()
     }
 }
