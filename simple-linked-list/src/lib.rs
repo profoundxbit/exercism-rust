@@ -1,7 +1,7 @@
 mod node;
-
+extern crate alloc;
 use node::Node;
-use std::iter::FromIterator;
+use std::{collections::VecDeque, iter::FromIterator};
 pub struct SimpleLinkedList<T> {
     head: Option<Box<Node<T>>>,
 }
@@ -55,13 +55,43 @@ impl<T> SimpleLinkedList<T> {
 
     #[must_use]
     pub fn rev(self) -> SimpleLinkedList<T> {
-        unimplemented!()
+        let mut prev = None;
+        let mut current = self.head;
+
+        while let Some(mut node) = current {
+            let temp = node.next;
+            node.next = prev;
+            prev = Some(node);
+            current = temp;
+        }
+
+        SimpleLinkedList { head: prev }
     }
 }
 
 impl<T> FromIterator<T> for SimpleLinkedList<T> {
-    fn from_iter<I: IntoIterator<Item = T>>(_iter: I) -> Self {
-        unimplemented!()
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut simple_linked_list = SimpleLinkedList::new();
+        for x in iter {
+            simple_linked_list.push(x)
+        }
+        simple_linked_list
+    }
+}
+
+impl<T> IntoIterator for SimpleLinkedList<T> {
+    type Item = T;
+
+    type IntoIter = alloc::collections::vec_deque::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let mut container = VecDeque::new();
+        let mut current = self.head;
+        while let Some(node) = current.take() {
+            container.push_front(node.data);
+            current = node.next;
+        }
+        container.into_iter()
     }
 }
 
@@ -77,7 +107,7 @@ impl<T> FromIterator<T> for SimpleLinkedList<T> {
 // demands more of the student than we expect at this point in the track.
 
 impl<T> From<SimpleLinkedList<T>> for Vec<T> {
-    fn from(mut _linked_list: SimpleLinkedList<T>) -> Vec<T> {
-        unimplemented!()
+    fn from(linked_list: SimpleLinkedList<T>) -> Vec<T> {
+        linked_list.into_iter().collect()
     }
 }
